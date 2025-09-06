@@ -1,0 +1,35 @@
+seed: 42
+
+model:
+  sketch_backbone: resnet18
+  photo_backbone: resnet18
+  embedding_dim: 128
+  learning_rate: 1e-3
+  temperature: 0.07
+  weight_decay: 1e-4
+
+data:
+  data_dir: data/sketch_dataset
+  batch_size: 32
+  num_workers: 4
+  image_size: 224
+
+trainer:
+  max_epochs: 50
+  accelerator: gpu
+  devices: 1
+  precision: 16
+  gradient_clip_val: 1.0
+  log_every_n_steps: 50
+
+callbacks:
+  model_checkpoint:
+    monitor: val/accuracy
+    mode: max
+    save_top_k: 3
+    filename: sketch-retrieval-{epoch:02d}-{val/accuracy:.3f}
+  
+  early_stopping:
+    monitor: val/accuracy
+    patience: 10
+    mode: max
