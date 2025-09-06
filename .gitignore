@@ -42,8 +42,10 @@ venv.bak/
 .ipynb_checkpoints
 
 # Data
-data/
-*.zip
+all/
+*.png
+*.jpg
+*.jpeg
 *.tar.gz
 *.rar
 

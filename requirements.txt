@@ -1,2 +1,3 @@
 gdown
 hydra-core
+pytorch-lightning
