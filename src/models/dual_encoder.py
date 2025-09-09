@@ -29,12 +29,12 @@ class DualEncoder(nn.Module):
     ):
         super().__init__()
         
-        self.sketch_adapter = nn.Conv2d(1, 3, 1)
         self.sketch_encoder = timm.create_model(
             sketch_backbone,
             pretrained=pretrained, 
             num_classes=0
         )
+        
         self.photo_encoder = timm.create_model(
             photo_backbone,
             pretrained=pretrained,
@@ -46,11 +46,8 @@ class DualEncoder(nn.Module):
         self.photo_projector = ProjectionHead(feat_dim, 512, embedding_dim)
 
     def encode_sketch(self, sketch):
-        if sketch.size(1) == 1:
-            sketch = self.sketch_adapter(sketch)
         features = self.sketch_encoder(sketch)
         return self.sketch_projector(features)
-    
     def encode_photo(self, photo):
         features = self.photo_encoder(photo)
         return self.photo_projector(features)

@@ -29,7 +29,6 @@ class SketchPhotoDataset(Dataset):
                 self.photo_files_by_class[cls] = photos
         
         train_size = int(0.8 * len(self.sketch_files))
-        val_size = len(self.sketch_files) - train_size
         
         if split == "train":
             self.sketch_files = self.sketch_files[:train_size]
@@ -50,7 +49,6 @@ class SketchPhotoDataset(Dataset):
         positive_photo = Image.open(positive_photo).convert('RGB')
         if self.transform:
             positive_photo = self.transform(positive_photo)
-        
         return {
             'sketch': sketch,
             'positive_photo': positive_photo,

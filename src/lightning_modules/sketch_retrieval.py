@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from torchmetrics import Accuracy
 from ..models.dual_encoder import DualEncoder
-from ..models.losses import CLIPStyleInfoNCE, InfoNCELoss
+from ..models.losses import CLIPStyleInfoNCE
 
 class SketchRetrievalModule(pl.LightningModule):
     def __init__(
