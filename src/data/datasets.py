@@ -41,7 +41,7 @@ class SketchPhotoDataset(Dataset):
     def __getitem__(self, idx):
         sketch_path, class_name = self.sketch_files[idx]
         
-        sketch = Image.open(sketch_path).convert('L')
+        sketch = Image.open(sketch_path)
         if self.sketch_transform:
             sketch = self.sketch_transform(sketch)
         

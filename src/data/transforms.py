@@ -1,4 +1,5 @@
 from torchvision import transforms
+
 def get_photo_transforms(image_size=224, split="train"):
     if split == "train":
         return transforms.Compose([
@@ -9,6 +10,12 @@ def get_photo_transforms(image_size=224, split="train"):
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
+    else:
+        return transforms.Compose([
+            transforms.Resize((image_size, image_size)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
 
 def get_sketch_transforms(image_size=224, split="train"):
     if split == "train":
@@ -16,11 +23,13 @@ def get_sketch_transforms(image_size=224, split="train"):
             transforms.Resize((image_size, image_size)),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomRotation(20),
-            transforms.RandomAffine(
-                degrees=0, 
-                translate=(0.15, 0.15), 
-                scale=(0.8, 1.2)
-            ),
+            transforms.RandomAffine(degrees=0, translate=(0.15, 0.15), scale=(0.8, 1.2)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+    else:
+        return transforms.Compose([
+            transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
