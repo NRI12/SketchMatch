@@ -41,7 +41,6 @@ class SketchPhotoDataset(Dataset):
     
     def __getitem__(self, idx):
         sketch_path, class_name = self.sketch_files[idx]
-        class_idx = self.class_to_idx[class_name]
         
         sketch = Image.open(sketch_path).convert('L')
         if self.sketch_transform:
@@ -52,19 +51,11 @@ class SketchPhotoDataset(Dataset):
         if self.transform:
             positive_photo = self.transform(positive_photo)
         
-        negative_class = random.choice([c for c in self.classes if c != class_name])
-        negative_photo = random.choice(self.photo_files_by_class[negative_class])
-        negative_photo = Image.open(negative_photo).convert('RGB')
-        if self.transform:
-            negative_photo = self.transform(negative_photo)
-        
         return {
             'sketch': sketch,
             'positive_photo': positive_photo,
-            'negative_photo': negative_photo,
-            'class_idx': class_idx
+            'class_idx': self.class_to_idx[class_name]
         }
-
 class InferenceDataset(Dataset):
     def __init__(self, image_dir, transform=None):
         self.image_dir = Path(image_dir)

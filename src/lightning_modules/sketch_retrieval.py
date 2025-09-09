@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from torchmetrics import Accuracy
 from ..models.dual_encoder import DualEncoder
-from ..models.losses import InfoNCELoss
+from ..models.losses import CLIPStyleInfoNCE, InfoNCELoss
 
 class SketchRetrievalModule(pl.LightningModule):
     def __init__(
@@ -24,7 +24,7 @@ class SketchRetrievalModule(pl.LightningModule):
             embedding_dim=embedding_dim
         )
         
-        self.loss_fn = InfoNCELoss(temperature=temperature)
+        self.loss_fn = CLIPStyleInfoNCE(temperature=temperature)
         self.accuracy = Accuracy(task="binary", num_classes=2)
         
     def forward(self, sketch, photo):
@@ -32,50 +32,50 @@ class SketchRetrievalModule(pl.LightningModule):
     
     def training_step(self, batch, batch_idx):
         sketch = batch['sketch']
-        positive_photo = batch['positive_photo']
-        negative_photo = batch['negative_photo']
+        photo = batch['positive_photo']
         
         sketch_embed = self.model.encode_sketch(sketch)
-        pos_embed = self.model.encode_photo(positive_photo)
-        neg_embed = self.model.encode_photo(negative_photo)
+        photo_embed = self.model.encode_photo(photo)
         
-        loss = self.loss_fn(sketch_embed, pos_embed, neg_embed)
+        # CLIP-style loss với batch-all negatives
+        loss = self.loss_fn(sketch_embed, photo_embed)
         
-        pos_sim = F.cosine_similarity(sketch_embed, pos_embed, dim=1)
-        neg_sim = F.cosine_similarity(sketch_embed, neg_embed, dim=1)
-        
-        predictions = (pos_sim > neg_sim).float()
-        targets = torch.ones_like(predictions)
-        acc = self.accuracy(predictions, targets)
+        with torch.no_grad():
+            sim_matrix = F.cosine_similarity(
+                sketch_embed.unsqueeze(1), 
+                photo_embed.unsqueeze(0), 
+                dim=2
+            )
+            pred_indices = sim_matrix.argmax(dim=1)
+            correct = pred_indices == torch.arange(len(sketch), device=sketch.device)
+            acc = correct.float().mean()
         
         self.log('train/loss', loss, prog_bar=True)
         self.log('train/accuracy', acc, prog_bar=True)
-        
         return loss
-    
     def validation_step(self, batch, batch_idx):
         sketch = batch['sketch']
-        positive_photo = batch['positive_photo']
-        negative_photo = batch['negative_photo']
-        
+        photo = batch['positive_photo']
+
         sketch_embed = self.model.encode_sketch(sketch)
-        pos_embed = self.model.encode_photo(positive_photo)
-        neg_embed = self.model.encode_photo(negative_photo)
-        
-        loss = self.loss_fn(sketch_embed, pos_embed, neg_embed)
-        
-        pos_sim = F.cosine_similarity(sketch_embed, pos_embed, dim=1)
-        neg_sim = F.cosine_similarity(sketch_embed, neg_embed, dim=1)
-        
-        predictions = (pos_sim > neg_sim).float()
-        targets = torch.ones_like(predictions)
-        acc = self.accuracy(predictions, targets)
-        
+        photo_embed = self.model.encode_photo(photo)
+
+        loss = self.loss_fn(sketch_embed, photo_embed)
+
+        sim_matrix = F.cosine_similarity(
+            sketch_embed.unsqueeze(1), 
+            photo_embed.unsqueeze(0), 
+            dim=2
+        )
+        pred_indices = sim_matrix.argmax(dim=1)
+        correct = pred_indices == torch.arange(len(sketch), device=sketch.device)
+        acc = correct.float().mean()
+
         self.log('val/loss', loss, prog_bar=True)
         self.log('val/accuracy', acc, prog_bar=True)
-        
+
         return loss
-    
+
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(
             self.parameters(),
